@@ -13,6 +13,10 @@ def upload(local_file, remote_file):
     return ret == 0
 
 def is_new(f):
+    # if the tmp file does not exists force an update
+    if not os.path.exists(tmpfile):
+        return True
+
     tmp_mtime = os.stat(tmpfile)[ST_MTIME]
     file_mtime = os.stat(f)[ST_MTIME]
     return file_mtime > tmp_mtime
@@ -20,10 +24,12 @@ def is_new(f):
 def touch(f):
     open(f, 'w').close()
    
-def update_dir(curr_dir):
-    for root, dirs, files in os.walk(curr_dir):
+def update_dir(d):
+    root_dir = os.path.join(local_root_dir, d)
+    for root, dirs, files in os.walk(root_dir):
         for f in files:
-            relative_path = os.path.join(curr_dir, f)
+            relative_path = os.path.join(
+                    os.path.relpath(root, local_root_dir), f)
             ret = update_file(relative_path)
             if not ret: return False
     return True
@@ -49,19 +55,25 @@ def run():
     remote_root_dir = sys.argv[2]
     tmpfile = os.path.join(local_root_dir, '.lastupload.tmp')
 
-    if not os.path.exists(tmpfile):
-        touch(tmpfile)
-
     for item in os.listdir(local_root_dir):
         full_name = os.path.join(local_root_dir, item)
-        if os.path.isfile(full_name):
-            ret = update_file(item)
-        else:
-            ret = update_dir(item)
+        
+        if full_name == tmpfile:
+            continue
 
-    return ret
+        if os.path.isfile(full_name):
+            if not update_file(item):
+                return False
+        else:
+            if not update_dir(item):
+                return False
+
+    return True
 
 if __name__ == '__main__':
-    if run():
-        touch(tmpfile)
+    try:
+        if run():
+            touch(tmpfile)
+    except Exception, e:
+        print e
 
