@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import sys
 import os
 import subprocess
@@ -24,19 +26,25 @@ def is_new(f):
 def touch(f):
     open(f, 'w').close()
    
-def update_dir(d):
-    root_dir = os.path.join(local_root_dir, d)
-    for root, dirs, files in os.walk(root_dir):
-        for f in files:
-            relative_path = os.path.join(
-                    os.path.relpath(root, local_root_dir), f)
-            ret = update_file(relative_path)
-            if not ret: return False
+def update_dir(local_path):
+    for item in os.listdir(local_path):
+        if item.startswith('.'):
+            continue
+
+        full_name = os.path.join(local_path, item)
+
+        if os.path.isfile(full_name):
+            if not update_file(full_name):
+                return False
+        else:
+            if not update_dir(full_name):
+                return False
+
     return True
 
 
-def update_file(relative_path):
-    local_path = os.path.join(local_root_dir, relative_path)
+def update_file(local_path):
+    relative_path = os.path.relpath(local_path, local_root_dir)
     remote_path = os.path.join(remote_root_dir, relative_path)
     if is_new(local_path):
         return upload(local_path, remote_path)
@@ -55,20 +63,7 @@ def run():
     remote_root_dir = sys.argv[2]
     tmpfile = os.path.join(local_root_dir, '.lastupload.tmp')
 
-    for item in os.listdir(local_root_dir):
-        full_name = os.path.join(local_root_dir, item)
-        
-        if full_name == tmpfile:
-            continue
-
-        if os.path.isfile(full_name):
-            if not update_file(item):
-                return False
-        else:
-            if not update_dir(item):
-                return False
-
-    return True
+    return update_dir(local_root_dir);
 
 if __name__ == '__main__':
     try:
