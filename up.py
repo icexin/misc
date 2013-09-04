@@ -9,6 +9,9 @@ local_root_dir = ''
 remote_root_dir = ''
 tmpfile = ''
 
+def error(msg):
+	print '\033[1;33m%s\033[m' %(str)	
+
 def upload(local_file, remote_file):
     print 'upload %s to %s' %(local_file, remote_file)
     ret = subprocess.call('scp -q -r %s %s'%(local_file, remote_file), shell=True)
@@ -69,6 +72,8 @@ if __name__ == '__main__':
     try:
         if run():
             touch(tmpfile)
+		else
+			error("failed.")
     except Exception, e:
-        print e
+		error(e);
 
