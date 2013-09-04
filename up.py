@@ -10,12 +10,16 @@ remote_root_dir = ''
 tmpfile = ''
 
 def error(msg):
-	print '\033[1;33m%s\033[m' %(str)	
+    print '\033[1;31m%s\033[m' %(msg)   
 
 def upload(local_file, remote_file):
     print 'upload %s to %s' %(local_file, remote_file)
-    ret = subprocess.call('scp -q -r %s %s'%(local_file, remote_file), shell=True)
-    return ret == 0
+    try:
+	    subprocess.check_output('scp -q -r %s %s'%(local_file, remote_file), shell=True, stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError, e:
+        error(e.output)
+        return False
+    return True
 
 def is_new(f):
     # if the tmp file does not exists force an update
@@ -72,8 +76,6 @@ if __name__ == '__main__':
     try:
         if run():
             touch(tmpfile)
-		else
-			error("failed.")
     except Exception, e:
-		error(e);
+        error(e);
 
